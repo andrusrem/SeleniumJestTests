@@ -1,16 +1,22 @@
 const { Builder, By } = require('selenium-webdriver');
-require('chromedriver');
+const chrome = require('selenium-webdriver/chrome');
+let Homepage = require('../pageobjects/homePage');
 require('@jest/globals');
 
 let driver;
-const TIMEOUT = 10000;
+const TIMEOUT = 60000;
 
 describe('Shopping cart workflow', () => {
 
     beforeAll(async () => {
-        driver = await new Builder().forBrowser('chrome').build()
+        driver = await new Builder().forBrowser('chrome')
+        // .setChromeOptions(new chrome.Options().addArguments('--headless'))
+        .build()
         await driver.manage().window().maximize()
-        await driver.get('https://www.kriso.ee/')
+        await driver.manage().setTimeouts({implicit: TIMEOUT})
+        Homepage = new Homepage(driver)
+        await Homepage.openUrl();
+        await Homepage.acceptCookies();
     }, TIMEOUT)
 
     afterAll(async () => {
@@ -18,14 +24,13 @@ describe('Shopping cart workflow', () => {
     })
 
     test('Test logo element is visible', async () => {
-        const logo = await driver.findElement(By.className('icon-kriso-logo'));
-        expect(logo).toBeDefined();
+        await Homepage.verifyLogo();
     })
 
     test('Test add first item to shopping cart', async () => {
         const bookLinks = await driver.findElements(By.className('book-img-link'))
         await bookLinks[0].click()
-
+        
         await driver.findElement(By.id('btn_addtocart')).click()
 
         const cartText = await driver.findElement(By.css('.item-messagebox')).getText()
