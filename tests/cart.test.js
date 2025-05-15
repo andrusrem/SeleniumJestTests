@@ -28,70 +28,38 @@ describe('Shopping cart workflow', () => {
     })
 
     test('Test add first item to shopping cart', async () => {
-        const bookLinks = await driver.findElements(By.className('book-img-link'))
-        await bookLinks[0].click()
-        
-        await driver.findElement(By.id('btn_addtocart')).click()
-
-        const cartText = await driver.findElement(By.css('.item-messagebox')).getText()
-        expect(cartText).toContain('Toode lisati ostukorvi')
+        await Homepage.openBookPage(1)
+        await Homepage.addItemToShoppingCart()
+        await Homepage.verifyItemAddedToCart()
+      });
+    
+      test('Test continue shopping', async () => {
+        await Homepage.continueShopping()
+      });
+    
+      test('Test add second item to shopping cart', async () => {
+        await Homepage.openBookPage(2)
+        await Homepage.addItemToShoppingCart()
+        await Homepage.verifyItemAddedToCart()
+      });
+    
+      test('Test verify cart has two items', async () => {
+        Cartpage = await Homepage.openShoppingCart()
+        await Cartpage.verifyCartQuantity(2)
+      });
+    
+      test('Test verify cart has correct sum of two', async () => {
+        cartSumOfTwo = await Cartpage.verifyCartSumIsCorrect()
+      });
+    
+      test('Test remove one item from the shopping cart', async () => {
+        await Cartpage.removeItemFromCart(1)
+        await Cartpage.verifyCartQuantity(1)
+      });
+    
+      test('Test verify cart has correct sum of one', async () => {
+        cartSumOfOne = await Cartpage.verifyCartSumIsCorrect()
+        expect(cartSumOfOne).toBeLessThan(cartSumOfTwo)
+      });
+    
     });
-
-    test('Test continue shopping', async () => {
-        await driver.findElement(By.className('cartbtn-event back')).click()
-        await driver.findElement(By.className('icon-kriso-logo')).click()
-    });
-
-    test('Test add second item to shopping cart', async () => {
-        const bookLinks = await driver.findElements(By.className('book-img-link'))
-        await bookLinks[1].click()
-
-        await driver.findElement(By.id('btn_addtocart')).click()
-
-        const cartText = await driver.findElement(By.css('.item-messagebox')).getText()
-        expect(cartText).toContain('Toode lisati ostukorvi')
-    });
-
-    test('Test verify cart has two items', async () => {
-        await driver.findElement(By.className('cartbtn-event forward')).click()
-
-        const cartQuantity = await driver.findElement(By.css('.order-qty > .o-value')).getText()
-        expect(cartQuantity).toContain("2")
-    });
-
-    test('Test verify cart has correct sum of two', async () => {
-        const cartItems = await driver.findElements(By.css('.tbl-row > .subtotal'))
-
-        for (let item of cartItems) {
-            basketSumOfTwo += parseFloat((await item.getText()).replace(/€/g, ""));
-        }
-
-        let basketSum = await driver.findElement(By.css('.order-total > .o-value')).getText()
-        const basketSumNum = parseFloat(basketSum.replace(/€/g, ""))
-
-        expect(basketSumNum).toBe(basketSumOfTwo);
-    });
-
-    test('Test remove one item from the shopping cart', async () => {
-        const cartItems = await driver.findElements(By.css('.tbl-row'))
-        await cartItems[0].findElement(By.css('.remove')).click();
-
-        const cartQuantity = await driver.findElement(By.css('.order-qty > .o-value')).getText()
-        expect(cartQuantity).toContain("1")
-    });
-
-    test('Test verify cart has correct sum of one', async () => {
-        const cartItems = await driver.findElements(By.css('.tbl-row > .subtotal'))
-
-        let itemsSum = 0;
-        for (let item of cartItems) {
-            itemsSum += parseFloat((await item.getText()).replace(/€/g, ""));
-        }
-
-        let basketSum = await driver.findElement(By.css('.order-total > .o-value')).getText()
-        const basketSumNum = parseFloat(basketSum.replace(/€/g, ""))
-
-        expect(basketSumNum).toBe(itemsSum)
-        expect(basketSumNum).toBeLessThan(basketSumOfTwo)
-    });
-})
