@@ -1,11 +1,12 @@
 const { Builder, By } = require('selenium-webdriver');
 const Homepage = require('../pageobjects/homePage');
 const SearchResultsPage = require('../pageobjects/searchResultsPage');
+const SearchBar = require('../pageobjects/searchBar');
 
 let driver;
 const TIMEOUT = 60000;
 
-describe('Shopping cart workflow', () => {
+describe('Search workflow', () => {
 
     beforeAll(async () => {
         driver = await new Builder().forBrowser('chrome')
@@ -15,6 +16,7 @@ describe('Shopping cart workflow', () => {
         await driver.manage().setTimeouts({ implicit: TIMEOUT })
         home = new Homepage(driver);
         results = new SearchResultsPage(driver);
+        searchBar = new SearchBar(driver);
         await home.openUrl();
         await home.acceptCookies();
     }, 20000);
@@ -23,34 +25,36 @@ describe('Shopping cart workflow', () => {
         await driver.quit();
     }, 10000);
 
-    test('Search for "harry potter" shows multiple relevant results', async () => {
-        await home.search('harry potter');
+    test("Test logo element is visible", async () => {
+    await home.verifyLogo();
+  }, 20000);
 
-        const titles = await results.getProductTitles();
-        expect(titles.length).toBeGreaterThan(1);
+  test("Test if multiple results are shown when searching for 'Harry Potter'", async () => {
+    resultsPage = await searchBar.search("Harry Potter");
+    await resultsPage.verifyMinResultsCount(2);
+  }, 20000);
 
-        titles.forEach(title => {
-            expect(title.toLowerCase()).toMatch(/harry|potter/);
-        });
-    }, 20000);
+  test("Test if all results contain the keyword 'Harry Potter'", async () => {
+    await resultsPage.checkResultsForKeyword("Harry Potter");
+  }, 20000);
 
+  test("Test if filtering to hardback reduces amount of results", async () => {
+    const initialResultsCount = await resultsPage.getResultsCount();
+    await resultsPage.addFilter("Hardback");
+    const newResultsCount = await resultsPage.getResultsCount();
 
-    test('Filter by English language works', async () => {
-        await results.filterByLanguage('Inglisekeelsed raamatud');
+    expect(Number(initialResultsCount)).toBeGreaterThan(
+      Number(newResultsCount)
+    );
+  }, 20000);
 
-        const language = await results.getProductLanguage();
-        
-        expect(language.toLowerCase()).toContain('Otsingu tulemus - Ingliskeelsed raamatud');
-        
-    }, 20000);
+  test("Test if filtered results match filter of Hardback", async () => {
+    await resultsPage.verifyResultsFormatType("Hardback");
+  }, 20000);
 
-    test('Filter by format "Kõvakaaneline" shows correct items', async () => {
-        await results.filterByFormat('Hardback');
-
-        const formats = await results.getProductFormats();
-        expect(formats.length).toBeGreaterThan(0);
-        formats.forEach(format => {
-            expect(format.toLowerCase()).toContain('Hardback');
-        });
-    }, 20000);
+  test("Test if all results are in English", async () => {
+    await searchBar.setLanguageToEnglish();
+    resultsPage = await searchBar.search("");
+    await resultsPage.verifyResultsAreInEnglish();
+  }, 20000);
 })
